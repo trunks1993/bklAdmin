@@ -1,0 +1,135 @@
+@import './variables.scss';
+@import './mixin.scss';
+@import './transition.scss';
+@import './element-ui.scss';
+@import './sidebar.scss';
+
+body {
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
+}
+
+html {
+  box-sizing: border-box;
+  height: 100%;
+  overflow-y: hidden;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+div:focus {
+  outline: none;
+}
+
+a:focus,
+a:active {
+  outline: none;
+  -moz-user-select: none;
+  /*火狐*/
+  -webkit-user-select: none;
+  /*webkit浏览器*/
+  -ms-user-select: none;
+  /*IE10*/
+  -khtml-user-select: none;
+  /*早期浏览器*/
+  user-select: none;
+}
+
+a,
+a:focus,
+a:hover {
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+}
+
+.clearfix {
+  &:after {
+    visibility: hidden;
+    display: block;
+    font-size: 0;
+    content: " ";
+    clear: both;
+    height: 0;
+  }
+}
+
+//main-container全局样式
+.app-main {
+  height: calc(100% - 85px);
+  overflow: scroll;
+  background: #f7f9f6a1;
+  border-top: 1px solid #d8dce5;
+  padding: 20px;
+}
+
+.pagination-container {
+  margin-top: 30px;
+}
+
+.filter-container {
+  padding-bottom: 10px;
+  .filter-item {
+    display: inline-block;
+    vertical-align: middle;
+    margin-bottom: 10px;
+  }
+}
+
+//进度条样式
+#nprogress .bar {
+  background: #4fc08d;
+}
+
+//loading
+.el-loading-mask {
+  z-index: 2000;
+}
+
+//级联选择
+.el-cascader {
+  width: 100%;
+}
+
+//收银台样式
+.pay-dialog {
+  .dialog-title {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    img {
+      width: 30px;
+      height: 30px;
+    }
+    span {
+      line-height: 25px;
+      font-size: 25px;
+      margin-left: 5px;
+    }
+  }
+  .el-dialog__body {
+    padding: 0 !important;
+  }
+}
+
+//tags
+.blueBack {
+  color: #409eff !important;
+  background-color: rgba(64,158,255,.1) !important;
+  border: 1px solid rgba(64,158,255,.2) !important;  
+}
+//el-badge
+.el-badge__content {
+  top:3px !important;
+}
+.hot-badge {
+ .el-badge__content {
+    top: 13px !important;
+ }
+}
