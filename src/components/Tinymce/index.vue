@@ -1,19 +1,40 @@
 <template>
   <div class="editor-container">
-    <div class="articles"></div>
+    <div class="articles" v-loading="loading">
+      <div style="padding-bottom: 20px;">软文列表</div>
+      <div class="articles-item" v-for="item in articleList" :class="{active:item.id === selectId}" @click="selectArticle(item)">
+        <div class="articles-item-main">
+          <img :src="item.articlePic">
+          <div class="articles-item-main-title">{{item.title}}</div>
+        </div>
+        <div class="articles-item-delete">
+          <svg-icon icon-class="delete" />
+        </div>
+      </div>
+      <div class="articles-pagination" v-if="articleList.length > 0">
+        <el-pagination small :page-size="listQuery.size" :current-page.sync="listQuery.current" @current-change="handleCurrentChange" layout="prev, pager, next" :total="total">
+        </el-pagination>
+      </div>
+    </div>
     <div class="tinymce">
       <div class="tools" :class="{'dask': !editorFocus}" v-loading="tinyToolsLoading"></div>
       <div class="tinymce-head">
         <div class="tinymce-head-title">
-          <input placeholder="请在这里输入标题" @click="() => {this.editorFocus = false}" max-length="64"></input>
+          <!-- <input placeholder="请在这里输入标题" @click="() => {this.editorFocus = false}" max-length="64"></input> -->
+          <el-input v-model="article.title" @focus="() => {this.editorFocus = false}" placeholder="请在这里输入标题"></el-input>
         </div>
         <div class="tinymce-head-writer">
-          <input placeholder="请输入作者" @click="() => {this.editorFocus = false}"></input>
+          <el-input v-model="article.author" @focus="() => {this.editorFocus = false}" placeholder="请输入作者"></el-input>
+          <!-- <input placeholder="请输入作者" @click="() => {this.editorFocus = false}"></input> -->
         </div>
       </div>
       <div class="tinymce-line"></div>
       <!-- tinymce挂载位置 -->
-      <div class="tinymce-main" :class="{'plac':content.length === 30}"></div>
+      <div class="tinymce-main" :class="{'plac':article.content.length === 30}"></div>
+      <div class="tinymce-btn">
+        <el-button type="primary" @click="saveArticle">保 存</el-button>
+        <el-button type="info" plain>预 览</el-button>
+      </div>
     </div>
     <div class="components"></div>
   </div>
@@ -22,6 +43,7 @@
 import editorImage from './components/editorImage'
 import plugins from './plugins'
 import toolbar from './toolbar'
+import { getArticleList, saveArticle } from '@/api/advert'
 
 export default {
   name: 'tinymce',
@@ -52,12 +74,30 @@ export default {
   },
   data() {
     return {
+      loading: false,
       tinyToolsLoading: false,
       editorFocus: true,
       hasChange: false,
       hasInit: false,
-      content: '',
-      tinymceId: this.id || 'vue-tinymce-' + +new Date()
+      total: 0,
+      listQuery: {
+        size: 10,
+        current: 1,
+        condition: {
+          user: this.$store.getters.userInfo.id
+        }
+      },
+      articleList: [],
+      article: {
+        id: '',
+        user: this.$store.getters.userInfo.id,
+        title: '',
+        author: '',
+        content: '',
+        articlePic: ''
+      },
+      selectId: ''
+      // tinymceId: this.id || 'vue-tinymce-' + +new Date()
     }
   },
   watch: {
@@ -67,6 +107,9 @@ export default {
     //   }
     // }
 
+  },
+  created() {
+    this.getList()
   },
   mounted() {
     this.initTinymce()
@@ -78,6 +121,28 @@ export default {
     this.destroyTinymce()
   },
   methods: {
+    getList() {
+      this.loading = true
+      getArticleList(this.listQuery).then(res => {
+        const data = res.data
+        if (data.code === 0 && data.msg === 'success') {
+          this.articleList = data.datas.records
+          this.total = data.datas.total
+          this.loading = false
+        }
+      }).catch(error => {
+        this.loading = false
+      })
+    },
+    saveArticle() {
+      saveArticle(this.article).then(res => {
+        this.getList()
+      })
+    },
+    selectArticle(article) {
+      this.selectId = article.id
+      this.article = article
+    },
     initTinymce() {
       const _this = this
       _this.tinyToolsLoading = true
@@ -105,7 +170,7 @@ export default {
           editor.on('NodeChange Change KeyUp', () => {
             // this.hasChange = true
             // this.$emit('input', editor.getContent({ format: 'raw' })) //传递到父组件
-            _this.content = editor.getContent({ format: 'raw' })
+            _this.article.content = editor.getContent({ format: 'text' })
           })
           editor.on('click', () => {
             _this.editorFocus = true
@@ -141,7 +206,11 @@ export default {
       arr.forEach(v => {
         window.tinymce.get(_this.tinymceId).insertContent(`<img class="wscnph" src="${v.url}" >`)
       })
-    }
+    },
+    handleCurrentChange(val) {
+      this.listQuery.current = val
+      this.getList()
+    },
   },
   destroyed() {
     this.destroyTinymce()
@@ -153,11 +222,74 @@ export default {
 .editor-container {
   display: flex;
   .articles {
-    flex: 1;
+    flex: 1.5;
+    width: 300px;
     height: 600px;
+    overflow: scroll;
+    padding: 20px;
+    border-right: 1px solid #e7e7eb;
+    .active {
+      border-top-width: 0;
+      padding: 9px 9px;
+      border: 2px solid #43b548;
+    }
+    &-item {
+      position: relative;
+      border: 1px solid #e7e7eb;
+      width: 100%;
+      padding: 10px;
+      cursor: pointer;
+      height: 165px;
+      &-main {
+        width: 100%;
+        position: relative;
+        height: 100%;
+        img {
+          width: 100%;
+          height: 100%;
+        }
+        &-title {
+          height: 28px;
+          line-height: 28px;
+          font-size: 14px;
+          position: absolute;
+          bottom: 0;
+          right: 0;
+          left: 0;
+          background: rgba(0, 0, 0, 0.6);
+          text-align: center;
+          color: #fff;
+          padding: 0 8px;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      }
+      &-delete {
+        text-align: right;
+        font-size: 30px;
+        padding: 0 10px;
+        height: 38px;
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+      }
+      &:hover {
+        .articles-item-delete {
+          display: block;
+        }
+      }
+    }
+    &-pagination {
+      width: 100%;
+      margin-top: 20px;
+    }
   }
   .tinymce {
-    padding: 0 20px 100px 20px;
+    padding: 20px 20px 100px 20px;
     flex: 3;
     .tools {
       border-bottom: 1px solid #e7e7eb;
@@ -210,8 +342,13 @@ export default {
     }
     &-main {
       position: relative;
-      min-height: 300px;
+      height: 450px;
+      overflow: scroll;
       border-bottom: 1px solid #e7e7eb;
+    }
+    &-btn {
+      padding: 20px 0;
+      text-align: center;
     }
     .plac {
       &:after {
@@ -223,7 +360,7 @@ export default {
     }
   }
   .components {
-    flex: 1;
+    flex: 1.5;
     height: 600px;
   }
 }
