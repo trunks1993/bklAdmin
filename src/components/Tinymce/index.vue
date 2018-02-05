@@ -8,7 +8,7 @@
           <div class="articles-item-main-title">{{item.title}}</div>
         </div>
         <div class="articles-item-delete">
-          <svg-icon icon-class="delete" />
+          <svg-icon icon-class="delete" @click.native="deleteArt"></svg-icon>
         </div>
       </div>
       <div class="articles-pagination" v-if="articleList.length > 0">
@@ -30,9 +30,9 @@
       </div>
       <div class="tinymce-line"></div>
       <!-- tinymce挂载位置 -->
-      <div class="tinymce-main" :class="{'plac':article.content.length === 30}"></div>
+      <div class="tinymce-main" :id="tinymceId" :class="{'plac':article.content.length === 30}"></div>
       <div class="tinymce-btn">
-        <el-button type="primary" @click="saveArticle">保 存</el-button>
+        <el-button type="primary" :loading="saveLoading" @click="saveArticle">保 存</el-button>
         <el-button type="info" plain>预 览</el-button>
       </div>
     </div>
@@ -75,6 +75,7 @@ export default {
   data() {
     return {
       loading: false,
+      saveLoading: false,
       tinyToolsLoading: false,
       editorFocus: true,
       hasChange: false,
@@ -96,16 +97,20 @@ export default {
         content: '',
         articlePic: ''
       },
-      selectId: ''
-      // tinymceId: this.id || 'vue-tinymce-' + +new Date()
+      selectId: '',
+      tinymceId: this.id || 'vue-tinymce-' + +new Date()
     }
   },
   watch: {
-    // value(val) {
-    //   if (!this.hasChange && this.hasInit) {
-    //     this.$nextTick(() => window.tinymce.get(this.tinymceId).setContent(val))
-    //   }
-    // }
+    article(val) {
+      // if (!this.hasChange) {
+      this.$nextTick(() => {
+        // alert(window.tinymce.getContent({ format: 'text' }))
+        // console.log(window.tinymce.get(this.tinymceId))
+        window.tinymce.get(this.tinymceId).setContent(val.content)
+      })
+      // }
+    }
 
   },
   created() {
@@ -135,7 +140,9 @@ export default {
       })
     },
     saveArticle() {
+      this.saveLoading = true
       saveArticle(this.article).then(res => {
+        this.saveLoading = false
         this.getList()
       })
     },
@@ -147,16 +154,15 @@ export default {
       const _this = this
       _this.tinyToolsLoading = true
       window.tinymce.init({
-        selector: '.tinymce-main',
+        selector: `#${this.tinymceId}`,
         height: 360,
         inline: true,
         fixed_toolbar_container: '.tools',
-        // toolbar: this.toolbar,
         menubar: false,
         toolbar: toolbar,
         plugins: plugins,
+        content_css: '/static/tinymce/skins/myTinymce.css',
         language: 'zh_CN',
-        theme_advanced_fonts: "宋体=宋体;微软雅黑=微软雅黑;新宋体=新宋体;Courier New=courier new,courier,monospace;AkrutiKndPadmini=Akpdmi-n",
         templates: [
           { title: '软文模版', description: 'Some desc 1', content: 'My content' },
           { title: '文件模版', description: 'Some desc 2', url: 'development.html' }
@@ -166,15 +172,20 @@ export default {
           //   editor.setContent(_this.value)
           // }
           // _this.hasInit = true
+
+          // 初始化获取焦点
           tinymce.activeEditor.focus()
+
+          // keyup抬起绑定content
           editor.on('NodeChange Change KeyUp', () => {
             // this.hasChange = true
             // this.$emit('input', editor.getContent({ format: 'raw' })) //传递到父组件
-            _this.article.content = editor.getContent({ format: 'text' })
+            _this.article.content = editor.getContent()
           })
           editor.on('click', () => {
             _this.editorFocus = true
           })
+          // table缩进键
           editor.on('keydown', function(evt) {
             if (evt.keyCode == 9) {
               if (evt.shiftKey) {
@@ -211,6 +222,9 @@ export default {
       this.listQuery.current = val
       this.getList()
     },
+    deleteArt() {
+      alert(1)
+    }
   },
   destroyed() {
     this.destroyTinymce()
@@ -276,6 +290,7 @@ export default {
         bottom: 0;
         background: rgba(0, 0, 0, 0.5);
         display: none;
+        z-index: 100;
       }
       &:hover {
         .articles-item-delete {
