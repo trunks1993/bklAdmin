@@ -1,8 +1,11 @@
 <template>
   <div class="editor-container">
     <div class="articles" v-loading="loading">
-      <div style="padding-bottom: 20px;">软文列表</div>
-      <div class="articles-item" v-for="item in articleList" :class="{active:item.id === selectId}" @click="selectArticle(item)">
+      <div style="padding-bottom: 20px;">
+        <span>软文列表</span>
+        <el-button style="float:right;" size="mini" type="primary" icon="el-icon-edit-outline" @click="handleAdd">新建软文</el-button>
+      </div>
+      <div class="articles-item" v-for="item in articleList" :class="{active:item.id === article.id}" @click="selectArticle(item)">
         <div class="articles-item-main">
           <img :src="item.articlePic">
           <div class="articles-item-main-title">{{item.title}}</div>
@@ -97,19 +100,18 @@ export default {
         content: '',
         articlePic: ''
       },
-      selectId: '',
       tinymceId: this.id || 'vue-tinymce-' + +new Date()
     }
   },
   watch: {
     article(val) {
-      // if (!this.hasChange) {
+      if (this.hasInit) {
       this.$nextTick(() => {
         // alert(window.tinymce.getContent({ format: 'text' }))
         // console.log(window.tinymce.get(this.tinymceId))
         window.tinymce.get(this.tinymceId).setContent(val.content)
       })
-      // }
+      }
     }
 
   },
@@ -132,12 +134,25 @@ export default {
         const data = res.data
         if (data.code === 0 && data.msg === 'success') {
           this.articleList = data.datas.records
+          this.selectArticle(data.datas.records[0])
           this.total = data.datas.total
           this.loading = false
         }
       }).catch(error => {
         this.loading = false
       })
+    },
+    handleAdd() {
+      const newArticle = {
+        id: '',
+        user: this.$store.getters.userInfo.id,
+        title: '',
+        author: '',
+        content: '',
+        articlePic: ''
+      }
+      this.articleList.unshift(newArticle)
+      this.article = newArticle
     },
     saveArticle() {
       this.saveLoading = true
@@ -147,14 +162,13 @@ export default {
       })
     },
     selectArticle(article) {
-      this.selectId = article.id
       this.article = article
     },
     initTinymce() {
       const _this = this
       _this.tinyToolsLoading = true
       window.tinymce.init({
-        selector: `#${this.tinymceId}`,
+        selector: `#${_this.tinymceId}`,
         height: 360,
         inline: true,
         fixed_toolbar_container: '.tools',
@@ -171,8 +185,9 @@ export default {
           // if (_this.value) {
           //   editor.setContent(_this.value)
           // }
-          // _this.hasInit = true
-
+          _this.hasInit = true
+          // 初始化获取文本内容
+          tinymce.get(_this.tinymceId).setContent(_this.article.content)
           // 初始化获取焦点
           tinymce.activeEditor.focus()
 
@@ -238,8 +253,8 @@ export default {
   .articles {
     flex: 1.5;
     width: 300px;
-    height: 600px;
-    overflow: scroll;
+    height: 685px;
+    overflow-y: scroll;
     padding: 20px;
     border-right: 1px solid #e7e7eb;
     .active {
@@ -358,7 +373,7 @@ export default {
     &-main {
       position: relative;
       height: 450px;
-      overflow: scroll;
+      overflow-y: scroll;
       border-bottom: 1px solid #e7e7eb;
     }
     &-btn {
