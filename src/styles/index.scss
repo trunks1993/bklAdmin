@@ -17,29 +17,15 @@ html {
   overflow-y: hidden;
 }
 
-::-webkit-scrollbar-track-piece {
-  //滚动条凹槽的颜色，还可以设置边框属性
-  background-color: #fff;
-}
-
-::-webkit-scrollbar {
-  //滚动条的宽度
-  width: 9px;
-  height: 9px;
-}
-
-::-webkit-scrollbar-thumb {
-  //滚动条的设置
-  background-color: #dddddd;
-  background-clip: padding-box;
-  min-height: 28px;
-  opacity: 0.5;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background-color: #bbb;
-}
-
+// ::-webkit-scrollbar:not(:hover),
+// ::-webkit-scroll-corner {
+//   opacity: 0 !important;
+//   -webkit-transition-delay: 0.2s !important;
+//   -webkit-transition: all 0.2s ease;
+// }
+// ::-webkit-scrollbar:hover {
+//   -webkit-transition: all 0.3s ease;
+// }
 *,
 *:before,
 *:after {
@@ -87,9 +73,25 @@ a:hover {
 .app-main {
   height: calc(100% - 85px);
   overflow: scroll;
-  background: #f7f9f6a1;
+  background: #fafbf9;
   border-top: 1px solid #d8dce5;
   padding: 20px;
+  &::-webkit-scrollbar {
+    //滚动条的宽度
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track-piece {
+    //滚动条凹槽的颜色，还可以设置边框属性
+    background-color: #fafbf9;
+  }
+  &::-webkit-scrollbar-thumb {
+    //滚动条的设置
+    border-radius: 10px;
+    background: #c2c2c2;
+    background-clip: padding-box;
+    min-height: 28px;
+  }
 }
 
 .pagination-container {

@@ -15,3 +15,13 @@ export function saveArticle(article) {
     data: article
   })
 }
+
+export function deleteArticle(advId) {
+  return request({
+    url: '/advArticle/delete',
+    method: 'post',
+    params: {
+      advId
+    }
+  })
+}
