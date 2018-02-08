@@ -1,27 +1,27 @@
 import request from '@/utils/request'
 
-export function getArticleList(listQuery) {
+export function getAdvertList(listQuery) {
   return request({
-    url: '/advArticle/findList',
+    url: '/advert/findList',
     method: 'post',
     data: listQuery
   })
 }
 
-export function saveArticle(article) {
+export function saveAdvert(Advert) {
   return request({
-    url: '/advArticle/save',
+    url: '/advert/save',
     method: 'post',
-    data: article
+    data: Advert
   })
 }
 
-export function deleteArticle(advId) {
+export function deleteAdvert(advertId) {
   return request({
-    url: '/advArticle/delete',
+    url: '/advert/delete',
     method: 'post',
     params: {
-      advId
+      advertId
     }
   })
 }

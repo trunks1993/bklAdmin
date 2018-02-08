@@ -1,7 +1,7 @@
 <template>
   <div class="editor-container">
     <div class="articles" v-loading="loading">
-      <div style="padding-bottom: 20px;">
+      <div style="padding-bottom: 20px;width: 220px;">
         <span>软文列表</span>
         <el-button style="float:right;" size="mini" type="primary" icon="el-icon-edit-outline" @click="handleAdd">新建软文</el-button>
       </div>
@@ -55,17 +55,34 @@
         <el-button type="info" plain>预 览</el-button>
       </div>
     </div>
-    <div class="components"></div>
+    <div class="components">
+      <div class="editor-custom-btn-container">
+        <editorImage color="#1890ff" class="editor-upload-btn" @successCBK="imageSuccessCBK"></editorImage>
+      </div>
+    </div>
+    <el-dialog title="选择封面" :visible.sync="dialogArticlePic" @close="()=>{this.selectSrc = ''}">
+      <div class="picSelect"><span class="picSelect-title">1 从正文选择封面</span><span>2 裁切封面</span></div>
+      <div class="imgPanel" v-if="imgList.length > 0">
+        <span v-for="item in imgList" @click="selectPic(item.src)" :class="{activePic:selectSrc === item.src}" class="imgPanel-item" :style="{'background-image':'url(\''+item.src+'\')'}"></span>
+      </div>
+      <div class="imgPanel" style="align-items:center" v-else>
+        <span>正文中无可用做封面的图片</span>
+      </div>
+      <div slot="footer" style="text-align: center;">
+        <el-button type="primary" :disabled="selectSrc === ''" @click="surePic">完 成</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 <script>
 import editorImage from './components/editorImage'
+import { initAddCommand } from './util'
 import plugins from './plugins'
 import toolbar from './toolbar'
-import { getArticleList, saveArticle, deleteArticle } from '@/api/advert'
+import { getAdvertList, saveAdvert, deleteAdvert } from '@/api/advert'
 
 export default {
-  name: 'tinymce',
+  // name: 'tinymce',
   components: { editorImage },
   props: {
     id: {
@@ -96,6 +113,7 @@ export default {
       loading: false,
       saveLoading: false,
       tinyToolsLoading: false,
+      dialogArticlePic: false,
       editorFocus: true,
       hasChange: false,
       hasInit: false,
@@ -105,9 +123,12 @@ export default {
         size: 10,
         current: 1,
         condition: {
+          type: 0,
           user: this.$store.getters.userInfo.id
         }
       },
+      imgList: [],
+      selectSrc: '',
       articleList: [],
       article: {
         id: '',
@@ -115,7 +136,8 @@ export default {
         title: '',
         author: '',
         content: '',
-        articlePic: ''
+        articlePic: '',
+        type: 0
       },
       tinymceId: this.id || 'vue-tinymce-' + +new Date()
     }
@@ -124,8 +146,6 @@ export default {
     article(val) {
       if (this.hasInit) {
         this.$nextTick(() => {
-          // alert(window.tinymce.getContent({ format: 'text' }))
-          // console.log(window.tinymce.get(this.tinymceId))
           window.tinymce.get(this.tinymceId).setContent(val.content)
         })
       }
@@ -147,7 +167,7 @@ export default {
   methods: {
     getList() {
       this.loading = true
-      getArticleList(this.listQuery).then(res => {
+      getAdvertList(this.listQuery).then(res => {
         const data = res.data
         if (data.code === 0 && data.msg === 'success') {
           this.articleList = data.datas.records
@@ -157,7 +177,8 @@ export default {
             title: '',
             author: '',
             content: '',
-            articlePic: ''
+            articlePic: '',
+            type: 0
           })
           this.total = data.datas.total
           this.loading = false
@@ -173,7 +194,8 @@ export default {
         title: '',
         author: '',
         content: '',
-        articlePic: ''
+        articlePic: '',
+        type: 0
       }
       this.articleList.unshift(newArticle)
       this.article = newArticle
@@ -184,7 +206,7 @@ export default {
         return
       }
       this.saveLoading = true
-      saveArticle(this.article).then(res => {
+      saveAdvert(this.article).then(res => {
         const data = res.data
         if (data.code === 0 && data.msg === 'success') {
           this.$notify({ title: '成功', message: '保存成功', type: 'success' })
@@ -206,13 +228,16 @@ export default {
       _this.tinyToolsLoading = true
       window.tinymce.init({
         selector: `#${_this.tinymceId}`,
+        width: 558,
+        max_width: 558,
         inline: true,
         fixed_toolbar_container: '.tools',
         menubar: false,
         toolbar: toolbar,
-        object_resizing: 'img',
         plugins: plugins,
-        indentation: '20pt',
+        object_resizing: 'img',
+        image_advtab: true,
+        fontsize_formats: '8px 10px 12px 14px 16px 18px 24px 36px',
         content_css: '/static/tinymce/skins/myTinymce.css',
         language: 'zh_CN',
         templates: [
@@ -220,6 +245,7 @@ export default {
           { title: '文件模版', description: 'Some desc 2', url: 'development.html' }
         ],
         setup: ed => {
+          initAddCommand(ed)
           ed.addButton('myIndent', {
             title: '首行缩进',
             icon: 'indent',
@@ -227,31 +253,11 @@ export default {
               ed.execCommand('mceStageindent');
             }
           })
-          ed.addCommand('mceStageindent', function() {
-            //基本变量设置
-            var ed = tinyMCE.activeEditor,
-              d = ed.dom,
-              s = ed.selection,
-              e, iv, iu, st;
-            st = s.getNode().style;
-            var allinline = d.select('p');
-            var bfontSize = document.body.currentStyle ? document.body.currentStyle['fontSize'] :
-              document.defaultView.getComputedStyle(document.body, false)['fontSize'];
-            iu = /[a-z%]+$/i.exec(bfontSize); //获得文字的大小
-            iv = parseInt(bfontSize) * 2; //俩个文字的宽度
-            //实现在选取段落时候缩进段落，不选取则缩进所有段落。
-            if (s.getContent() != "") {
-              if (st.textIndent == "" || st.textIndent == "undefined") {
-                st.textIndent = iv + iu;
-              } else {
-                st.textIndent = '';
-              }
-            } else {
-              if (st.textIndent == "" || st.textIndent == "undefined") {
-                d.setStyle(allinline, 'text-indent', iv + iu);
-              } else {
-                d.setStyle(allinline, 'text-indent', '');
-              }
+          ed.addButton('myImgTool', {
+            title: '图片自适应手机',
+            icon: 'image',
+            onclick: function() {
+              ed.execCommand('mceStageImg');
             }
           })
         },
@@ -296,7 +302,8 @@ export default {
     imageSuccessCBK(arr) {
       const _this = this
       arr.forEach(v => {
-        window.tinymce.get(_this.tinymceId).insertContent(`<img class="wscnph" src="${v.url}" >`)
+        console.log(v)
+        window.tinymce.get(_this.tinymceId).insertContent(`<img width="100%" height="auto" style="max-width:558px;max-height:${558/(v.width/v.height) +'px'};" src="${process.env.BASE_API+v.url}" >`)
       })
     },
     handleCurrentChange(val) {
@@ -318,7 +325,8 @@ export default {
               title: '',
               author: '',
               content: '',
-              articlePic: ''
+              articlePic: '',
+              type: 0
             })
           })
           this.$message({ type: 'success', message: '删除成功!' })
@@ -340,8 +348,20 @@ export default {
       })
     },
     getContentImg() {
-      const dom = document.getElementById(this.tinymceId)
-      const imgList = window.tinymce.dom.DomQuery('img',dom)
+      // const dom = document.getElementById(this.tinymceId)
+      // const imgList = window.tinymce.dom.DomQuery('img', dom)
+      const imgList = tinyMCE.activeEditor.dom.select('img')
+      this.imgList = imgList
+      this.dialogArticlePic = true
+    },
+    selectPic(src) {
+      if (src === this.selectSrc) this.selectSrc = ''
+      else this.selectSrc = src
+    },
+    surePic() {
+      this.dialogArticlePic = false
+      this.article.articlePic = this.selectSrc
+      this.selectSrc = ''
     }
   },
   destroyed() {
@@ -353,12 +373,12 @@ export default {
 <style lang="scss" scoped>
 .editor-container {
   display: flex;
+  justify-content: center;
   .articles {
-    flex: 1.5;
-    width: 300px;
+    width: 240px;
     height: 688px;
     overflow-y: scroll;
-    padding: 20px;
+    padding: 20px 20px 20px 0;
     border-right: 1px solid #e7e7eb;
     &::-webkit-scrollbar {
       //滚动条的宽度
@@ -378,16 +398,16 @@ export default {
     }
     .active {
       border-top-width: 0;
-      padding: 9px 9px;
       border: 2px solid #43b548;
     }
     &-item {
       position: relative;
       border: 1px solid #e7e7eb;
-      width: 100%;
+      box-sizing: border-box;
+      width: 220px;
       padding: 10px;
       cursor: pointer;
-      height: 165px;
+      height: 220px;
       &-main {
         width: 100%;
         position: relative;
@@ -438,8 +458,7 @@ export default {
     }
   }
   .tinymce {
-    padding: 20px 20px 100px 20px;
-    flex: 3;
+    padding: 20px 20px 100px 20px; // flex: 3;
     .tools {
       border-bottom: 1px solid #e7e7eb;
       .mce-tinymce {
@@ -479,6 +498,7 @@ export default {
       &-main {
         position: relative;
         min-height: 350px;
+        width: 588px;
       }
     }
     &-line {
@@ -495,12 +515,73 @@ export default {
         color: #999;
         position: absolute;
         top: 0;
+        left: 15px;
       }
     }
   }
   .components {
-    flex: 1.5;
     height: 600px;
+    width: 130px;
+    padding: 20px 0;
+  }
+
+  .picSelect {
+    text-align: center;
+    &-title {
+      &:after {
+        content: "";
+        display: inline-block;
+        vertical-align: middle;
+        margin: 10px;
+        width: 20px;
+        border-bottom: 1px solid #e4e8eb;
+      }
+    }
+  }
+  .activePic {
+    &:after {
+      content: ' ';
+      display: inline-block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      background: url(https://res.wx.qq.com/mpres/htmledition/images/icon/common/icon_card_selected3a7b38.png) no-repeat 0 0;
+      background-position: center center;
+    }
+    &:before {
+      content: ' ';
+      display: inline-block;
+      position: absolute;
+      background: rgba(0, 0, 0, 0.5);
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+    }
+  }
+  .imgPanel {
+    margin-top: 20px;
+    overflow-y: scroll;
+    height: 350px;
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    &-item {
+      display: block;
+      width: 115px;
+      height: 115px;
+      margin: 10px 0 0 10px;
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center center;
+      position: relative;
+      &:hover {
+        cursor: pointer;
+      }
+    }
   }
 }
 
@@ -528,14 +609,16 @@ export default {
     background: none;
   }
   input {
+        color:#222;
+
     border: 0!important;
-    border-radius: 0;
-    padding: 0;
+    border-radius: 0; // padding: 0;
   }
   &-title {
     margin: 20px 0 15px 0;
     input {
       font-size: 20px;
+      font-weight: 400;
       &::-webkit-input-placeholder {
         color: #999;
         font-size: 20px;

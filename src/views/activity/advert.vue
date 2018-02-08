@@ -10,7 +10,7 @@
 import Tinymce from '@/components/Tinymce'
 
 export default {
-  name: 'tinymce-demo',
+  // name: 'tinymce-demo'
   components: { Tinymce },
   data() {
     return {

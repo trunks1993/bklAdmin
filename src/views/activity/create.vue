@@ -68,9 +68,7 @@ export default {
         maxMoney: 0,
         type: 1,
         needShare: 0,
-        adImg: '',
-        adTitle: '',
-        adLink: '',
+        advert: '',
         scanedTimes: 1
       },
       qrTotalPrice: 0,

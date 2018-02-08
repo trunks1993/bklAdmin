@@ -35,6 +35,9 @@
           <el-form-item label="是否需要分享广告：">
             <el-col :span="9">
               <el-switch v-model="activity.needShare" active-color="#13ce66" inactive-color="#ff4949" :active-value="0" :inactive-value="1"></el-switch>
+              <transition name="fade">
+                <advert-select v-if="!activity.needShare" v-model="activity.advert"></advert-select>
+              </transition>
             </el-col>
           </el-form-item>
           <el-form-item label="限制扫码次数：">
@@ -64,16 +67,16 @@
             </el-col>
             <el-col :span="15">设置不超过设置范围的数，可包含两位小数</el-col>
           </el-form-item>
-          <el-form-item label="最大金额：">
+          <!-- <el-form-item label="最大金额：">
             <el-col :span="9">
               <el-input-number :controls="false" class="gold" disabled v-model="activity.maxMoney">
               </el-input-number>
             </el-col>
             <el-col :span="15">计算公式：总金额 - 最小金额 * (红包数量 - 1)</el-col>
-          </el-form-item>
+          </el-form-item> -->
         </div>
       </div>
-      <transition name="fade">
+      <!--  <transition name="fade">
         <div class="activityForm-main" v-if="activity.needShare===0">
           <div class="activityForm-main-title">
             <span>广告信息</span>
@@ -109,7 +112,7 @@
             </el-form-item>
           </div>
         </div>
-      </transition>
+      </transition> -->
     </el-form>
     <el-dialog title="管理收货地址" :visible.sync="dialogDeliveryAddress" @close="refreshAddress">
       <delivery-address v-if="dialogDeliveryAddress"></delivery-address>
@@ -120,6 +123,7 @@
 import { formatDefaultAddress } from '@/utils'
 import { getDeliveryAddressList } from '@/api/user'
 import DeliveryAddress from '@/components/DeliveryAddress'
+import AdvertSelect from '@/components/AdvertSelect'
 import rec from '@/assets/rec.png'
 import advertImg from '@/assets/advertDetail.png'
 
@@ -127,7 +131,8 @@ import { validateAdLink } from '@/utils/validate'
 
 export default {
   components: {
-    DeliveryAddress
+    DeliveryAddress,
+    AdvertSelect
   },
   props: {
     activity: {
@@ -152,7 +157,6 @@ export default {
       },
       deliveryAddressList: [],
       dialogDeliveryAddress: false,
-      uploadUrl: process.env.BASE_API + '/api/upload/uploadImg/' + this.$store.getters.userInfo.id,
       rules: {
         name: [{ required: true, message: '请输入活动名称', trigger: 'blur' }],
         startDate: [{ required: true, message: '请选择活动开始日期', trigger: 'change' }],
@@ -304,34 +308,6 @@ export default {
       font-weight: bolder!important;
     }
   }
-}
-
-//头像上传
-.avatar-uploader .el-upload {
-  border: 1px dashed #d9d9d9;
-  border-radius: 6px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-}
-
-.avatar-uploader .el-upload:hover {
-  border-color: #409EFF;
-}
-
-.avatar-uploader-icon {
-  font-size: 28px;
-  color: #8c939d;
-  width: 178px;
-  height: 178px;
-  line-height: 178px;
-  text-align: center;
-}
-
-.avatar {
-  width: 178px;
-  height: 178px;
-  display: block;
 }
 
 </style>
