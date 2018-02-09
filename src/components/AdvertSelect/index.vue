@@ -1,15 +1,20 @@
 <template>
   <div>
     <div class="advert">
-      <div class="advert-plus" @click="openSelectDialog">
+      <div v-if="!advertRes" class="advert-plus" @click="openSelectDialog">
         <i class="el-icon-document"></i>
       </div>
+      <div v-else class="advert-res" :style="{'background-image':'url(\''+baseUrl+advertRes.advertPic+'\')'}" @click="openSelectDialog(advertRes)">
+        <span class="advert-res-title">{{advertRes.title}}</span>
+      </div>
     </div>
-    <el-dialog title="我的广告" :visible.sync="dialogAdvertSelect">
-      <el-tabs tab-position="left" style="height: 300px;" @tab-click="handleTabClick">
+    <el-dialog title="广告设置" :visible.sync="dialogAdvertSelect" v-if="dialogAdvertSelect" @close="handleDialogClose">
+      <el-tabs tab-position="left" style="height: 300px;" @tab-click="handleTabClick" v-model="activeName">
         <el-tab-pane label="微页面" v-loading="advertLoading">
           <div v-if="advertList.length>0" class="advertList-content">
-            <span v-for="item in advertList" @click="selectAdvert(item)" :class="{active:value === item.id}" class="advertList-content-item" :style="{'background-image':'url(\''+item.src+'\')'}"></span>
+            <span v-for="item in advertList" @click="selectAdvert(item)" :class="{active:advertSelect.id === item.id}" class="advertList-content-item" :style="{'background-image':'url(\''+baseUrl+item.advertPic+'\')'}">
+                <span class="advertList-content-title">{{item.title}}</span>
+            </span>
           </div>
           <div v-else class="advertList-nothing">
             <el-button type="text" @click="toAdvert">啥也没有，立即创建软文</el-button>
@@ -17,7 +22,9 @@
         </el-tab-pane>
         <el-tab-pane label="外链" v-loading="advertLoading">
           <div v-if="advertList.length>0 && !newLink" class="advertList-content">
-            <span v-for="item in advertList" @click="selectAdvert(item)" :class="{active:value === item.id}" class="advertList-content-item" :style="{'background-image':'url(\''+item.src+'\')'}"></span>
+            <span v-for="item in advertList" @click="selectAdvert(item)" :class="{active:advertSelect.id === item.id}" class="advertList-content-item" :style="{'background-image':'url(\''+baseUrl+item.advertPic+'\')'}">
+              <span class="advertList-content-title">{{item.title}}</span>
+            </span>
             <span class="advertList-content-add" @click="()=>{this.newLink = true}"><i class="el-icon-share"></i></span>
           </div>
           <div v-else class="advertList-addLink">
@@ -40,17 +47,17 @@
         </el-tab-pane>
       </el-tabs>
       <div slot="footer" style="width:100%;text-align: center;">
-        <el-button size="small" type="primary" :disabled="!value" v-if="!newLink">确认</el-button>
-        <template v-else>
+        <template v-if="listQuery.condition.type === 1 && (newLink || advertList.length === 0)">
           <el-button size="small" type="primary" @click="saveAdvert">保存</el-button>
-          <el-button size="small" type="info" @click="()=>{this.newLink=false}">取消</el-button>
+          <el-button v-if="advertList.length !== 0" size="small" type="info" @click="cancelAddLink">取消</el-button>
         </template>
+        <el-button size="small" type="primary" @click="sureSelect" :disabled="!advertSelect.id" v-else>确认</el-button>
       </div>
     </el-dialog>
   </div>
 </template>
 <script>
-import { getAdvertList, saveAdvert } from '@/api/advert'
+import { getAdvertList, saveAdvert, deleteAdvert } from '@/api/advert'
 import { validateAdLink } from '@/utils/validate'
 
 export default {
@@ -64,6 +71,7 @@ export default {
     return {
       dialogAdvertSelect: false,
       advertLoading: false,
+      paneTab: 0,
       newLink: false,
       advertList: [],
 
@@ -78,6 +86,7 @@ export default {
       },
       imageUrl: '',
       uploadUrl: process.env.BASE_API + '/api/upload/uploadImg/' + this.$store.getters.userInfo.id,
+      baseUrl: process.env.BASE_API,
       advert: {
         id: '',
         user: this.$store.getters.userInfo.id,
@@ -86,14 +95,17 @@ export default {
         advertPic: '',
         type: 1
       },
-      previewImg: '', 
+      previewImg: '',
       rules: {
         title: [
           { required: true, message: "标题不能为空", trigger: 'blur' },
           { max: 64, message: '长度在 1 到 64 个字符', trigger: 'blur' }
         ],
         url: [{ required: true, validator: validateAdLink, trigger: 'blur' }]
-      }
+      },
+      advertRes: '',
+      advertSelect: '',
+      activeName: '0'
     }
   },
   created() {},
@@ -109,23 +121,26 @@ export default {
         }
       })
     },
-    openSelectDialog() {
-      this.dialogAdvertSelect = true
+    openSelectDialog(advertRes) {
+      if (advertRes.type === 1) {
+        this.listQuery.condition.type = 1
+        this.activeName = '1'
+      }
+      this.advertSelect = advertRes
       this.getAdvertList()
+      this.dialogAdvertSelect = true
     },
     toAdvert() {
       this.$router.push({ path: '/activity/advert' })
     },
     handleTabClick(val) {
+      this.newLink = false
       if (val.paneName === '0') {
-        this.$emit('input', '')
         this.listQuery.condition.type = 0
-        this.getAdvertList()
       } else {
-        this.$emit('input', '')
         this.listQuery.condition.type = 1
-        this.getAdvertList()
       }
+      this.getAdvertList()
     },
     //--------------------------------------图片上传--------------------------------------
     handleAvatarSuccess(res, file) {
@@ -152,7 +167,9 @@ export default {
             const data = res.data
             if (data.code === 0 && data.msg === 'success') {
               this.$notify({ title: '成功', message: '保存成功', type: 'success' })
+              this.newLink = false
               this.getAdvertList()
+              this.$refs["advert"].resetFields()
             } else {
               this.$message.error('保存失败')
             }
@@ -163,8 +180,22 @@ export default {
       })
     },
     selectAdvert(advert) {
-      if (advert.id === this.value) this.$emit('input', '')
-      else this.$emit('input', advert.id)
+      this.advertSelect = advert.id === this.advertSelect.id ? '' : advert
+    },
+    sureSelect() {
+      this.$emit('input', this.advertSelect.id)
+      this.advertRes = this.advertSelect
+      this.dialogAdvertSelect = false
+      this.handleDialogClose()
+    },
+    handleDialogClose() {
+      this.listQuery.condition.type = 0
+      this.activeName = '0'
+      this.newLink = false
+    },
+    cancelAddLink() {
+      this.newLink = false
+      this.$refs["advert"].resetFields()
     }
   }
 }
@@ -213,7 +244,7 @@ export default {
     content: '';
     z-index: 10
   }
-  .advert-plus {
+  &-plus {
     width: 100%;
     height: 100%;
     font-size: 28px;
@@ -228,8 +259,36 @@ export default {
       border-color: #4fc08d;
     }
   }
+  &-res {
+    width: 100%;
+    height: 100%;
+    border: 1px dashed #d9d9d9;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
+    &:hover {
+      cursor: pointer;
+      border-color: #4fc08d;
+    }
+    &-title {
+      height: 30px;
+      display: block;
+      background: rgba(0, 0, 0, 0.5);
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      text-align: left;
+      line-height: 30px;
+      color: #fff;
+      padding: 0 8px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 500;
+    }
+  }
 }
-
 
 .advertList-content {
   height: 300px;
@@ -242,6 +301,7 @@ export default {
     width: 115px;
     height: 115px;
     margin: 10px 0 0 10px;
+    border: 1px solid #d9d9d9;
     background-repeat: no-repeat;
     background-size: cover;
     background-position: center center;
@@ -249,6 +309,22 @@ export default {
     &:hover {
       cursor: pointer;
     }
+  }
+  &-title {
+    width: 100%;
+    height: 20px;
+    display: block;
+    background: rgba(0, 0, 0, 0.5);
+    position: absolute;
+    bottom: 0;
+    text-align: left;
+    line-height: 20px;
+    color: #fff;
+    padding: 0 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
   }
   &-add {
     width: 115px;
@@ -285,7 +361,7 @@ export default {
       background: rgba(0, 0, 0, 0.5);
       top: 0;
       left: 0;
-      bottom: 0;
+      bottom: 20px;
       right: 0;
     }
   }

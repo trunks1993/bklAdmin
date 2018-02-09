@@ -5,16 +5,17 @@
         <span>软文列表</span>
         <el-button style="float:right;" size="mini" type="primary" icon="el-icon-edit-outline" @click="handleAdd">新建软文</el-button>
       </div>
-      <div class="articles-item" v-for="(item,index) in articleList" :class="{active:item.id === article.id}" @click="selectArticle(item)">
+      <div class="articles-item" v-for="(item,index) in advertList" :class="{active:item.id === advert.id}" @click="selectAdvert(item)">
         <div class="articles-item-main">
-          <img :src="item.articlePic">
-          <div class="articles-item-main-title">{{item.title}}</div>
+          <img v-if="item.advertPic" :src="baseUrl + item.advertPic">
+          <div v-else class="articles-item-main-noPic"><i class="el-icon-picture"></i></div>
+          <div class="articles-item-main-title">{{item.title || '标题'}}</div>
         </div>
-        <div class="articles-item-delete">
-          <svg-icon icon-class="delete" @click.native="deleteArt(index)"></svg-icon>
+        <div class="articles-item-delete" v-if="advertList.length !== 1 || advertList[0].id !== ''">
+          <svg-icon icon-class="delete" @click.native="deleteAdvert(index)"></svg-icon>
         </div>
       </div>
-      <div class="articles-pagination" v-if="articleList.length > 0">
+      <div class="articles-pagination" v-if="advertList.length > 0">
         <el-pagination small :page-size="listQuery.size" :current-page.sync="listQuery.current" @current-change="handleCurrentChange" layout="prev, pager, next" :total="total">
         </el-pagination>
       </div>
@@ -24,23 +25,23 @@
       <div class="tinymceContent">
         <div class="tinymceContent-head">
           <div class="tinymceContent-head-title">
-            <el-input v-model="article.title" @focus="() => {this.editorFocus = false,this.inputActive = 1}" @blur="() => {this.editorFocus = false,this.inputActive = 0}" placeholder="请在这里输入标题">
-              <span v-if="inputActive === 1 || article.title&&article.title.length > 64" :style="article.title&&article.title.length > 64?'color:#e15f63':''" slot="append">
-                  {{!article.title?0:article.title.length}}/64
+            <el-input v-model="advert.title" @focus="() => {this.editorFocus = false,this.inputActive = 1}" @blur="() => {this.editorFocus = false,this.inputActive = 0}" placeholder="请在这里输入标题">
+              <span v-if="inputActive === 1 || advert.title&&advert.title.length > 64" :style="advert.title&&advert.title.length > 64?'color:#e15f63':''" slot="append">
+                  {{!advert.title?0:advert.title.length}}/64
               </span>
             </el-input>
           </div>
           <div class="tinymceContent-head-writer">
-            <el-input v-model="article.author" @focus="() => {this.editorFocus = false,this.inputActive = 2}" @blur="() => {this.editorFocus = false,this.inputActive = 0}" placeholder="请输入作者">
-              <span v-if="inputActive === 2 || article.author&&article.author.length > 8" :style="article.author&&article.author.length > 8?'color:#e15f63':''" slot="append">
-                  {{!article.author?0:article.author.length}}/8
+            <el-input v-model="advert.author" @focus="() => {this.editorFocus = false,this.inputActive = 2}" @blur="() => {this.editorFocus = false,this.inputActive = 0}" placeholder="请输入作者">
+              <span v-if="inputActive === 2 || advert.author&&advert.author.length > 8" :style="advert.author&&advert.author.length > 8?'color:#e15f63':''" slot="append">
+                  {{!advert.author?0:advert.author.length}}/8
               </span>
             </el-input>
           </div>
         </div>
         <div class="tinymce-line"></div>
         <!-- tinymce挂载位置 -->
-        <div class="tinymceContent-main" :id="tinymceId" :class="{'plac':(article.content.length === 61 && !editorFocus)}"></div>
+        <div class="tinymceContent-main" :id="tinymceId" :class="{'plac':(advert.content.length === 61 && !editorFocus)}"></div>
         <div class="tinymce-line"></div>
         <div class="tinymceContent-photo">
           <div>封面</div>
@@ -60,7 +61,7 @@
         <editorImage color="#1890ff" class="editor-upload-btn" @successCBK="imageSuccessCBK"></editorImage>
       </div>
     </div>
-    <el-dialog title="选择封面" :visible.sync="dialogArticlePic" @close="()=>{this.selectSrc = ''}">
+    <el-dialog title="选择封面" :visible.sync="dialogArticlePic">
       <div class="picSelect"><span class="picSelect-title">1 从正文选择封面</span><span>2 裁切封面</span></div>
       <div class="imgPanel" v-if="imgList.length > 0">
         <span v-for="item in imgList" @click="selectPic(item.src)" :class="{activePic:selectSrc === item.src}" class="imgPanel-item" :style="{'background-image':'url(\''+item.src+'\')'}"></span>
@@ -118,6 +119,7 @@ export default {
       hasChange: false,
       hasInit: false,
       inputActive: 0,
+      baseUrl: process.env.BASE_API,
       total: 0,
       listQuery: {
         size: 10,
@@ -129,21 +131,21 @@ export default {
       },
       imgList: [],
       selectSrc: '',
-      articleList: [],
-      article: {
+      advertList: [],
+      advert: {
         id: '',
         user: this.$store.getters.userInfo.id,
         title: '',
         author: '',
         content: '',
-        articlePic: '',
+        advertPic: '',
         type: 0
       },
       tinymceId: this.id || 'vue-tinymce-' + +new Date()
     }
   },
   watch: {
-    article(val) {
+    advert(val) {
       if (this.hasInit) {
         this.$nextTick(() => {
           window.tinymce.get(this.tinymceId).setContent(val.content)
@@ -170,14 +172,22 @@ export default {
       getAdvertList(this.listQuery).then(res => {
         const data = res.data
         if (data.code === 0 && data.msg === 'success') {
-          this.articleList = data.datas.records
-          this.selectArticle(data.datas.records[0] || {
+          this.advertList = data.datas.records.length > 0 ? data.datas.records : [{
             id: '',
             user: this.$store.getters.userInfo.id,
             title: '',
             author: '',
             content: '',
-            articlePic: '',
+            advertPic: '',
+            type: 0
+          }]
+          this.selectAdvert(data.datas.records[0] || {
+            id: '',
+            user: this.$store.getters.userInfo.id,
+            title: '',
+            author: '',
+            content: '',
+            advertPic: '',
             type: 0
           })
           this.total = data.datas.total
@@ -188,25 +198,29 @@ export default {
       })
     },
     handleAdd() {
-      const newArticle = {
+      if (this.advertList[0].id === '') {
+        this.$message({ message: '您有未保存的新软文', type: 'warning' });
+        return
+      }
+      const newAdvert = {
         id: '',
         user: this.$store.getters.userInfo.id,
         title: '',
         author: '',
         content: '',
-        articlePic: '',
+        advertPic: '',
         type: 0
       }
-      this.articleList.unshift(newArticle)
-      this.article = newArticle
+      this.advertList.unshift(newAdvert)
+      this.advert = newAdvert
     },
     saveArticle() {
-      if (!this.article.title || this.article.title.length > 64 || this.article.content.length === 61 || (this.article.author && this.article.author.length > 8)) {
+      if (!this.advert.title || this.advert.title.length > 64 || this.advert.content.length === 61 || (this.advert.author && this.advert.author.length > 8)) {
         this.$message.error('标题，正文不能为空，且标题不能超过64个字，作者不超过8个字')
         return
       }
       this.saveLoading = true
-      saveAdvert(this.article).then(res => {
+      saveAdvert(this.advert).then(res => {
         const data = res.data
         if (data.code === 0 && data.msg === 'success') {
           this.$notify({ title: '成功', message: '保存成功', type: 'success' })
@@ -220,8 +234,8 @@ export default {
         this.saveLoading = false
       })
     },
-    selectArticle(article) {
-      this.article = article
+    selectAdvert(advert) {
+      this.advert = advert
     },
     initTinymce() {
       const _this = this
@@ -264,14 +278,14 @@ export default {
         init_instance_callback: editor => {
           _this.hasInit = true
           // 初始化获取文本内容
-          editor.setContent(_this.article.content)
+          editor.setContent(_this.advert.content)
           // 初始化获取焦点
           tinymce.activeEditor.focus()
           // keyup抬起绑定content
           editor.on('NodeChange Change KeyUp', () => {
             // this.hasChange = true
             // this.$emit('input', editor.getContent({ format: 'raw' })) //传递到父组件
-            _this.article.content = editor.getContent()
+            _this.advert.content = editor.getContent()
           })
           editor.on('click', () => {
             _this.editorFocus = true
@@ -310,28 +324,28 @@ export default {
       this.listQuery.current = val
       this.getList()
     },
-    deleteArt(index) {
+    deleteAdvert(index) {
       this.$confirm('此操作将永久删除该软文, 是否继续?', '提示', {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
         type: 'warning'
       }).then(() => {
-        if (!this.articleList[index].id) {
-          this.articleList.splice(index, 1)
+        if (!this.advertList[index].id) {
+          this.advertList.splice(index, 1)
           this.$nextTick(() => {
-            this.selectArticle(this.articleList[index] || {
+            this.selectAdvert(this.advertList[index] || {
               id: '',
               user: this.$store.getters.userInfo.id,
               title: '',
               author: '',
               content: '',
-              articlePic: '',
+              advertPic: '',
               type: 0
             })
           })
           this.$message({ type: 'success', message: '删除成功!' })
         } else {
-          deleteArticle(this.articleList[index].id).then(res => {
+          deleteAdvert(this.advertList[index].id).then(res => {
             const data = res.data
             if (data.code === 0 && data.msg === 'success') {
               this.$message({ type: 'success', message: '删除成功!' })
@@ -344,7 +358,7 @@ export default {
           })
         }
       }).catch(() => {
-        this.$message({ type: 'info', message: '已取消删除' })
+        // this.$message({ type: 'info', message: '已取消删除' })
       })
     },
     getContentImg() {
@@ -352,6 +366,7 @@ export default {
       // const imgList = window.tinymce.dom.DomQuery('img', dom)
       const imgList = tinyMCE.activeEditor.dom.select('img')
       this.imgList = imgList
+      console.log(imgList)
       this.dialogArticlePic = true
     },
     selectPic(src) {
@@ -360,8 +375,8 @@ export default {
     },
     surePic() {
       this.dialogArticlePic = false
-      this.article.articlePic = this.selectSrc
-      this.selectSrc = ''
+      this.advert.advertPic = this.selectSrc.split(this.baseUrl)[1]
+      // this.selectSrc = ''
     }
   },
   destroyed() {
@@ -415,6 +430,15 @@ export default {
         img {
           width: 100%;
           height: 100%;
+        }
+        &-noPic {
+          width: 100%;
+          height: 100%;
+          background: #ececec;
+          color: #c0c0c0;
+          font-size: 50px;
+          line-height: 175px;
+          text-align: center;
         }
         &-title {
           height: 28px;
@@ -567,8 +591,7 @@ export default {
     height: 350px;
     width: 100%;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-wrap: wrap; // justify-content: center;
     &-item {
       display: block;
       width: 115px;
@@ -609,7 +632,7 @@ export default {
     background: none;
   }
   input {
-        color:#222;
+    color: #222;
 
     border: 0!important;
     border-radius: 0; // padding: 0;

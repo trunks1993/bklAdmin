@@ -16,12 +16,12 @@ export function saveAdvert(Advert) {
   })
 }
 
-export function deleteAdvert(advertId) {
+export function deleteAdvert(advId) {
   return request({
     url: '/advert/delete',
     method: 'post',
     params: {
-      advertId
+      advId
     }
   })
 }

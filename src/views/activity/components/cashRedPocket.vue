@@ -36,7 +36,7 @@
             <el-col :span="9">
               <el-switch v-model="activity.needShare" active-color="#13ce66" inactive-color="#ff4949" :active-value="0" :inactive-value="1"></el-switch>
               <transition name="fade">
-                <advert-select v-if="!activity.needShare" v-model="activity.advert"></advert-select>
+                <advert-select v-show="!activity.needShare" v-model="activity.advert"></advert-select>
               </transition>
             </el-col>
           </el-form-item>
@@ -166,7 +166,8 @@ export default {
           { max: 64, message: '长度在 1 到 64 个字符', trigger: 'blur' }
         ],
         adLink: [{ required: true, validator: validateAdLink, trigger: 'blur' }]
-      }
+      },
+      advert: ''
     }
   },
   watch: {
