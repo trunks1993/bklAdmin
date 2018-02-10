@@ -14,7 +14,17 @@
         </el-radio-group>
       </div>
     </div>
-    <el-table v-loading="loading" border :data="activity" style="width: 100%">
+    <el-table v-loading="loading" border :data="activity" style="width: 100%" @expand-change="selectedAdvert">
+      <el-table-column type="expand" label="广告" width="100px" cell-style="tableExpand">
+        <template slot-scope="scope">
+          <div style="position: relative;" v-if="selectedActivity">
+            <advert-select v-model="scope.row.advert"></advert-select>
+            <div style="position: absolute;left: 210px;bottom: 0;">
+              <el-button size="small" type="primary" :disabled="selectedActivity.advert === activity[scope.$index].advert" @click="updateActivity(scope.row)">保存修改</el-button>
+            </div>
+          </div>
+        </template>
+      </el-table-column>
       <el-table-column prop="name" align="center" label="活动名"></el-table-column>
       <el-table-column align="center" label="活动类型">
         <template slot-scope="scope">
@@ -48,51 +58,31 @@
       <el-pagination background @size-change="handleSizeChange" @current-change="handleCurrentChange" :current-page.sync="listQuery.current" :page-size="listQuery.size" :page-sizes="[10,20,30, 50]" layout="total, sizes, prev, pager, next, jumper" :total="total">
       </el-pagination>
     </div>
-    <el-dialog v-if="selectedActivity" title="活动详情" class="activity-dialog" :visible.sync="dialogActivity" @close="restForm">
-      <el-tabs type="border-card" @tab-click="handleTabClick">
-        <el-tab-pane label="基本信息">
-          <el-row>
-            <el-col :span="6">
-              总金额：{{selectedActivity.totalMoney / 100}}
-            </el-col>
-            <el-col :span="6">
-              总二维码数：{{selectedActivity.qrCount}}
-            </el-col>
-            <el-col :span="6">
-              已扫描金额：{{selectedActivity.scanedMoney / 100}}
-            </el-col>
-            <el-col :span="6">
-              已扫码二维码数：{{selectedActivity.scanedCount}}
-            </el-col>
-          </el-row>
-          <el-form v-if="!selectedActivity.needShare" :model="selectedActivity" ref="advert" :rules="advert" label-position="left" label-width="100px" style="margin-top: 30px;width:450px;" size="small">
-            <el-form-item label="广告图片：">
-              <el-upload class="avatar-uploader" :action="uploadUrl" :show-file-list="false" :on-success="handleAvatarSuccess" :before-upload="beforeAvatarUpload">
-                <img v-if="selectedActivity.adImg" :src="selectedActivity.adImg" class="avatar">
-                <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-              </el-upload>
-            </el-form-item>
-            <el-form-item label="广告描述：" prop="adTitle">
-              <el-input type="textarea" v-model="selectedActivity.adTitle"></el-input>
-            </el-form-item>
-            <el-form-item label="广告链接：" prop="adLink">
-              <el-input v-model="selectedActivity.adLink"></el-input>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click.native="updateActivity">保存</el-button>
-            </el-form-item>
-          </el-form>
-        </el-tab-pane>
-        <el-tab-pane label="统计">
-          <span>筛选：</span>
-          <el-select size="mini" v-model="dateType" @change="handleChange" placeholder="请选择">
-            <el-option label="最近一周" :value="1"></el-option>
-            <el-option label="最近一月" :value="2"></el-option>
-            <el-option label="最近一年" :value="3"></el-option>
-          </el-select>
-          <div id="countData" style="margin-top:20px;" :style="{width:'100%',height:'400px'}"></div>
-        </el-tab-pane>
-      </el-tabs>
+    <el-dialog v-if="selectedActivity" title="活动详情" class="activity-dialog" :visible.sync="dialogActivity">
+      <el-row>
+        <el-col :span="6">
+          总金额：{{selectedActivity.totalMoney / 100}}
+        </el-col>
+        <el-col :span="6">
+          总二维码数：{{selectedActivity.qrCount}}
+        </el-col>
+        <el-col :span="6">
+          已扫描金额：{{selectedActivity.scanedMoney / 100}}
+        </el-col>
+        <el-col :span="6">
+          已扫码二维码数：{{selectedActivity.scanedCount}}
+        </el-col>
+      </el-row>
+      </el-tab-pane>
+      <div style="margin-top: 20px;">
+        <span>筛选：</span>
+        <el-select size="mini" v-model="dateType" @change="handleChange" placeholder="请选择">
+          <el-option label="最近一周" :value="1"></el-option>
+          <el-option label="最近一月" :value="2"></el-option>
+          <el-option label="最近一年" :value="3"></el-option>
+        </el-select>
+        <div id="countData" style="margin-top:20px;" :style="{width:'100%',height:'400px'}"></div>
+      </div>
     </el-dialog>
   </div>
 </template>
@@ -101,10 +91,14 @@ import { getActivityList, changeStatus, deleteActivity, getNoScanedInfo, initSta
 import { getTotalOptions } from '@/views/dashboard/statistics'
 import waves from '@/directive/waves/index.js' // 水波纹指令
 import { validateAdLink } from '@/utils/validate'
+import AdvertSelect from '@/components/AdvertSelect'
 
 export default {
   directives: {
     waves
+  },
+  components: {
+    AdvertSelect
   },
   data() {
     return {
@@ -123,14 +117,7 @@ export default {
       dialogActivity: false,
       selectedActivity: null,
       dateType: 1,
-      uploadUrl: process.env.BASE_API + '/api/upload/uploadImg/' + this.$store.getters.userInfo.id,
-      advert: {
-        adTitle: [
-          { required: true, message: "标题不能为空", trigger: 'blur' },
-          { max: 64, message: '长度在 1 到 64 个字符', trigger: 'blur' }
-        ],
-        adLink: [{ required: true, validator: validateAdLink, trigger: 'blur' }]
-      }
+      uploadUrl: process.env.BASE_API + '/api/upload/uploadImg/' + this.$store.getters.userInfo.id
     }
   },
   created() {
@@ -215,11 +202,10 @@ export default {
     openActivityDialog(activity) {
       this.dialogActivity = true
       this.selectedActivity = activity
+      this.initStatisticsByActivityId()
     },
-    handleTabClick(val) {
-      if (val.paneName === '1') {
-        this.initStatisticsByActivityId()
-      }
+    selectedAdvert(row) {
+      this.selectedActivity = _.clone(row)
     },
     handleChange() {
       this.initStatisticsByActivityId()
@@ -233,27 +219,20 @@ export default {
         }
       })
     },
-    updateActivity() {
-      this.$refs["advert"].validate((valid) => {
-        if (valid) {
-          updateActivity(this.selectedActivity).then(res => {
-            const data = res.data
-            if (data.code === 0 && data.msg === 'success') {
-              this.$notify({
-                title: '成功',
-                message: '修改成功',
-                type: 'success',
-                duration: 2000
-              })
-              this.getList()
-              this.dialogActivity = false
-            }
+    updateActivity(activity) {
+      updateActivity(activity).then(res => {
+        const data = res.data
+        if (data.code === 0 && data.msg === 'success') {
+          this.$notify({
+            title: '成功',
+            message: '修改成功',
+            type: 'success',
+            duration: 2000
           })
+          this.getList()
+          this.dialogActivity = false
         }
       })
-    },
-    restForm() {
-      this.$refs["advert"].resetFields()
     },
     //--------------------------------------图片上传--------------------------------------
     handleAvatarSuccess(res, file, fileList) {
@@ -282,9 +261,8 @@ export default {
 }
 
 </style>
-<style type="text/css">
-//头像上传
-.avatar-uploader .el-upload {
+<style type="text/css" lang='scss'>
+/*.avatar-uploader .el-upload {
   border: 1px dashed #d9d9d9;
   border-radius: 6px;
   cursor: pointer;
@@ -309,6 +287,13 @@ export default {
   width: 178px;
   height: 178px;
   display: block;
+}*/
+
+.el-table__expanded-cell {
+  background: #fafbf9;
+  &:hover {
+    background-color: #fafbf9!important;
+  }
 }
 
 </style>

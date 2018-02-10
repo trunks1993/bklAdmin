@@ -51,6 +51,7 @@ const validateAdLink = (rule, value, callback) => {
   callback()
 
 }
+
 const validateUsername = (rule, value, callback) => {
   if (!value) {
     callback(new Error('帐号不能为空'));

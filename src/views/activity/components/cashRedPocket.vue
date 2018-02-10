@@ -46,73 +46,32 @@
             </el-col>
             <el-col :span="15">限制本次活动每个微信号可扫码的次数</el-col>
           </el-form-item>
-          <el-form-item label="二维码数：">
+          <el-form-item label="二维码数(红包数)：">
             <el-col :span="9">
-              <el-input-number :min="1" v-model="activity.qrCount" @change="checkInteger($event,'qrCount')">
+              <el-input-number :min="1" v-model="activity.qrCount" 
+              @blur="()=>{this.$refs.activity.validateField('minMoney')
+            this.$refs.activity.validateField('totalMoney')}" 
+            @change="checkInteger($event,'qrCount')" :controls="false">
               </el-input-number>
             </el-col>
             <el-col :span="15">一个二维码对应一个红包</el-col>
           </el-form-item>
-          <el-form-item label="红包总金额：">
+          <el-form-item label="红包总金额：" prop="totalMoney">
             <el-col :span="9">
-              <el-input-number :min="activity.qrCount" @change="checkSmallNumber($event,'totalMoney')" v-model="activity.totalMoney" :controls="false" class="gold"></el-input-number>
+              <el-input-number :min="1" @change="checkSmallNumber($event,'totalMoney')" v-model="activity.totalMoney" :controls="false" class="gold"></el-input-number>
               <span style="color:#4fc08d;font-size:13px;">微信手续费：{{activity.totalMoney | mathCeil()}}</span>
             </el-col>
             <el-col :span="15">微信限制，单个红包金额不能少于1元</el-col>
           </el-form-item>
-          <el-form-item label="最小金额：">
+          <el-form-item label="最小金额：" prop="minMoney" v-if="activity.qrCount !== 1">
             <el-col :span="9">
-              <el-input-number :min="1" :max="Math.floor(activity.totalMoney/activity.qrCount * 100)/100" :controls="false" v-model="activity.minMoney" class="gold" @change="checkSmallNumber($event,'minMoney')"></el-input-number>
+              <el-input-number :min="1" :max="maxMinMoney" :controls="false" v-model="activity.minMoney" class="gold" @change="checkSmallNumber($event,'minMoney')"></el-input-number>
               <span style="color:#4fc08d;font-size:13px;">{{ minMoney_rule(activity.totalMoney,activity.qrCount ) }}</span>
             </el-col>
             <el-col :span="15">设置不超过设置范围的数，可包含两位小数</el-col>
           </el-form-item>
-          <!-- <el-form-item label="最大金额：">
-            <el-col :span="9">
-              <el-input-number :controls="false" class="gold" disabled v-model="activity.maxMoney">
-              </el-input-number>
-            </el-col>
-            <el-col :span="15">计算公式：总金额 - 最小金额 * (红包数量 - 1)</el-col>
-          </el-form-item> -->
         </div>
       </div>
-      <!--  <transition name="fade">
-        <div class="activityForm-main" v-if="activity.needShare===0">
-          <div class="activityForm-main-title">
-            <span>广告信息</span>
-            <el-popover ref="popover" placement="bottom-start" trigger="hover">
-              <div>
-                <img style="width:300px;" :src="advertImg">
-              </div>
-            </el-popover>
-            <svg-icon class="question-detail" icon-class="question" v-popover:popover/>
-          </div>
-          <div class="activityForm-main-item">
-            <el-form-item label="广告图片:">
-              <el-col :span="9">
-                <el-upload class="avatar-uploader" :action="uploadUrl" :show-file-list="false" :on-success="handleAvatarSuccess" :before-upload="beforeAvatarUpload">
-                  <img v-if="activity.adImg" :src="activity.adImg" class="avatar">
-                  <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-                </el-upload>
-              </el-col>
-              <el-col :span="15"></el-col>
-            </el-form-item>
-            <el-form-item label="广告标题:" prop="adTitle">
-              <el-col :span="9">
-                <el-input type="textarea" style="width:220px" placeholder="不超过64个字符" v-model="activity.adTitle"></el-input>
-              </el-col>
-              <el-col :span="15"></el-col>
-            </el-form-item>
-            <el-form-item label="广告链接:" prop="adLink">
-              <el-col :span="9">
-                <el-input v-model="activity.adLink" style="width:220px" placeholder="http://www.xxxx.com 或 https://...">
-                </el-input>
-              </el-col>
-              <el-col :span="15">正确格式：http://www.xxxx.com 或 https://www.xxxx.com</el-col>
-            </el-form-item>
-          </div>
-        </div>
-      </transition> -->
     </el-form>
     <el-dialog title="管理收货地址" :visible.sync="dialogDeliveryAddress" @close="refreshAddress">
       <delivery-address v-if="dialogDeliveryAddress"></delivery-address>
@@ -127,8 +86,6 @@ import AdvertSelect from '@/components/AdvertSelect'
 import rec from '@/assets/rec.png'
 import advertImg from '@/assets/advertDetail.png'
 
-import { validateAdLink } from '@/utils/validate'
-
 export default {
   components: {
     DeliveryAddress,
@@ -140,6 +97,19 @@ export default {
     }
   },
   data() {
+    const validateTotalMoney = (rule, value, callback) => {
+      this.$refs.activity.validateField('minMoney')
+      if (value < this.activity.qrCount) {
+        callback(new Error('总金额不能小于红包个数'));
+      }
+      callback()
+    }
+    const validateMinMoney = (rule, value, callback) => {
+      if (value <= this.maxMinMoney) {
+        callback()
+      }
+      callback(new Error('最小金额超出设置范围'))
+    }
     return {
       listQuery: {
         current: 1,
@@ -161,28 +131,15 @@ export default {
         name: [{ required: true, message: '请输入活动名称', trigger: 'blur' }],
         startDate: [{ required: true, message: '请选择活动开始日期', trigger: 'change' }],
         deliveryAddress: [{ required: true, message: '收货地址不能为空', trigger: 'change' }],
-        adTitle: [
-          { required: true, message: "标题不能为空", trigger: 'blur' },
-          { max: 64, message: '长度在 1 到 64 个字符', trigger: 'blur' }
-        ],
-        adLink: [{ required: true, validator: validateAdLink, trigger: 'blur' }]
+        totalMoney: [{ required: true, validator: validateTotalMoney, trigger: 'blur' }],
+        minMoney: [{ required: true, validator: validateMinMoney, trigger: 'blur' }]
       },
       advert: ''
     }
   },
-  watch: {
-    activity: {
-      handler: function(val) {
-        if (val.totalMoney < val.qrCount) {
-          val.totalMoney = val.qrCount
-        }
-        if (val.minMoney > Math.floor(val.totalMoney / val.qrCount * 100) / 100) {
-          val.minMoney = Math.floor(val.totalMoney / val.qrCount * 100) / 100
-        }
-        val.maxMoney = Math.floor((val.totalMoney - val.minMoney * (val.qrCount - 1)) * 100) / 100
-        this.activity = val
-      },
-      deep: true
+  computed: {
+    maxMinMoney() {
+      return Math.floor(this.activity.totalMoney / this.activity.qrCount * 100) / 100
     }
   },
   created() {

@@ -8,6 +8,16 @@ export function getAdvertList(listQuery) {
   })
 }
 
+export function getAdvert(advId) {
+  return request({
+    url: '/advert/findById',
+    method: 'post',
+    params: {
+      advId
+    }
+  })
+}
+
 export function saveAdvert(Advert) {
   return request({
     url: '/advert/save',

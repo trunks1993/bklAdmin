@@ -59,6 +59,7 @@
     <div class="components">
       <div class="editor-custom-btn-container">
         <editorImage color="#1890ff" class="editor-upload-btn" @successCBK="imageSuccessCBK"></editorImage>
+        <el-button type="primary" @click="addTicket">添加优惠券</el-button>
       </div>
     </div>
     <el-dialog title="选择封面" :visible.sync="dialogArticlePic">
@@ -77,7 +78,7 @@
 </template>
 <script>
 import editorImage from './components/editorImage'
-import { initAddCommand } from './util'
+import { initAddCommand } from './utils'
 import plugins from './plugins'
 import toolbar from './toolbar'
 import { getAdvertList, saveAdvert, deleteAdvert } from '@/api/advert'
@@ -319,6 +320,10 @@ export default {
         console.log(v)
         window.tinymce.get(_this.tinymceId).insertContent(`<img width="100%" height="auto" style="max-width:558px;max-height:${558/(v.width/v.height) +'px'};" src="${process.env.BASE_API+v.url}" >`)
       })
+    },
+    addTicket() {
+      const _this = this
+      window.tinymce.get(_this.tinymceId).insertContent(`<button name="ticket" click="test" href="http://wwww.baidu.com">测试</button><script>function test() {alert(1)}<script>`)
     },
     handleCurrentChange(val) {
       this.listQuery.current = val

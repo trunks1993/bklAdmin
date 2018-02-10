@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="advert">
+    <div class="advert" v-loading="advertLoading">
       <div v-if="!advertRes" class="advert-plus" @click="openSelectDialog">
         <i class="el-icon-document"></i>
       </div>
@@ -57,7 +57,7 @@
   </div>
 </template>
 <script>
-import { getAdvertList, saveAdvert, deleteAdvert } from '@/api/advert'
+import { getAdvertList, saveAdvert, deleteAdvert, getAdvert } from '@/api/advert'
 import { validateAdLink } from '@/utils/validate'
 
 export default {
@@ -73,8 +73,8 @@ export default {
       advertLoading: false,
       paneTab: 0,
       newLink: false,
-      advertList: [],
 
+      advertList: [],
       total: null,
       listQuery: {
         size: 20,
@@ -108,8 +108,21 @@ export default {
       activeName: '0'
     }
   },
-  created() {},
+  created() {
+    if (this.value) this.getAdvert()
+  },
   methods: {
+    getAdvert() {
+      this.advertLoading = true
+      getAdvert(this.value).then(res => {
+        const data = res.data
+        if (data.code === 0 && data.msg === 'success') {
+          this.advertSelect = data.data
+          this.advertRes = data.data
+          this.advertLoading = false
+        }
+      })
+    },
     getAdvertList() {
       this.advertLoading = true
       getAdvertList(this.listQuery).then(res => {
@@ -211,7 +224,6 @@ export default {
   border: 1px solid #ebeef5;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   position: relative;
-  top: 5px;
   &:before {
     box-sizing: content-box;
     width: 0px;
