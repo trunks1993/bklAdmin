@@ -15,9 +15,15 @@ import _ from 'lodash'
 import './styles/element-variables.scss' //自定义颜色
 import VueStomp from "vue-stomp"
 import echarts from 'echarts'
+import Croppa from 'vue-croppa'
 
+import'../static/Ueditor/ueditor.config.js'
+import'../static/Ueditor/ueditor.all.min.js'
+import'../static/Ueditor/lang/zh-cn/zh-cn.js'
+import'../static/Ueditor/ueditor.parse.min.js'
 
 Vue.prototype.$echarts = echarts 
+Vue.component('croppa', Croppa.component)
 
 Vue.use(VueStomp)
 

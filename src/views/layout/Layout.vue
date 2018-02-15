@@ -1,38 +1,40 @@
 <template>
-  <div class="app-wrapper" :class="{hideSidebar:!sidebar.opened}">
-    <header-tools></header-tools>
-    <sidebar class="sidebar-container"></sidebar>
-    <div class="main-container">
-      <navbar></navbar>
-      <tags-view></tags-view>
-      <app-main></app-main>
-    </div>
+  <div class="app-wrapper">
+    <navbar id="navbar"></navbar>
+    <div id="fixedTemp"></div>
+    <app-main></app-main>
   </div>
 </template>
 <script>
-import { Navbar, Sidebar, AppMain, TagsView,HeaderTools } from '@/views/layout/components'
+import { Navbar, AppMain } from '@/views/layout/components'
+import Breadcrumb from '@/components/Breadcrumb'
+import { getElement, dynCreateDomObject } from '@/components/Ueditor/domUtils'
 
 export default {
-  name: 'layout',
   components: {
-    HeaderTools,
     Navbar,
-    Sidebar,
-    AppMain,
-    TagsView
+    AppMain
   },
   data() {
     return {
       endPoint: process.env.BASE_API + "/jnkjSocket"
     }
   },
-  computed: {
-    sidebar() {
-      return this.$store.state.app.sidebar
-    }
-  },
   mounted() {
     this.connectSrv()
+    const _this = this
+    window.onscroll = function() {
+      if (_this.$route.path !== '/activity/advert') {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0
+        if (scrollTop > 61) {
+          UE.dom.domUtils.addClass(getElement('navbar'), 'fixedNav')
+          getElement('fixedTemp').setAttribute('style', 'height: 61px')
+        } else {
+          UE.dom.domUtils.removeClasses(getElement('navbar'), 'fixedNav')
+          getElement('fixedTemp').setAttribute('style', 'height: 0')
+        }
+      }
+    }
   },
   methods: {
     connectSrv() {
@@ -54,10 +56,15 @@ export default {
 <style rel="stylesheet/scss" lang="scss" scoped>
 @import "src/styles/mixin.scss";
 .app-wrapper {
-  // @include clearfix;
+  @include clearfix;
   position: relative;
-  height: 100vh;
   width: 100%;
+}
+
+.fixedNav {
+  position: fixed;
+  z-index: 1000;
+  opacity: 0.9;
 }
 
 </style>

@@ -22,5 +22,20 @@
        height: 200px;
      }
    }
+ } 
+ // el-menu
+ .el-menu--horizontal {
+   border-bottom: 0!important;
+   background-color: transparent!important;
  }
- 
+ .el-menu-item:hover {
+   background-color: #e1edfa!important;
+ }
+
+ .el-menu--horizontal .is-active {
+  background-color: #e1edfa!important;
+ }
+
+ .el-submenu__title:hover {
+   background-color: #e1edfa!important;
+ }

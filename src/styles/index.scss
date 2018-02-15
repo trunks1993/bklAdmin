@@ -2,19 +2,23 @@
 @import './mixin.scss';
 @import './transition.scss';
 @import './element-ui.scss';
-@import './sidebar.scss';
+
+
+html {
+  box-sizing: border-box;
+  height: 100%;
+}
 
 body {
+  height: 100%;
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, Arial, sans-serif;
 }
 
-html {
-  box-sizing: border-box;
+#app {
   height: 100%;
-  overflow-y: hidden;
 }
 
 // ::-webkit-scrollbar:not(:hover),
@@ -32,22 +36,13 @@ html {
   box-sizing: inherit;
 }
 
-div:focus {
+* {
   outline: none;
+  user-select: none;
 }
 
-a:focus,
-a:active {
+div:focus {
   outline: none;
-  -moz-user-select: none;
-  /*火狐*/
-  -webkit-user-select: none;
-  /*webkit浏览器*/
-  -ms-user-select: none;
-  /*IE10*/
-  -khtml-user-select: none;
-  /*早期浏览器*/
-  user-select: none;
 }
 
 a,
@@ -71,11 +66,10 @@ a:hover {
 
 //main-container全局样式
 .app-main {
-  height: calc(100% - 85px);
-  overflow: scroll;
-  background: #fafbf9;
-  border-top: 1px solid #d8dce5;
-  padding: 20px;
+  // border-top: 1px solid #d8dce5;
+  width: 1200px;
+  margin: auto;
+  padding: 30px 0;
   &::-webkit-scrollbar {
     //滚动条的宽度
     width: 8px;

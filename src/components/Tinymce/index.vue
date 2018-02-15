@@ -381,7 +381,6 @@ export default {
     surePic() {
       this.dialogArticlePic = false
       this.advert.advertPic = this.selectSrc.split(this.baseUrl)[1]
-      // this.selectSrc = ''
     }
   },
   destroyed() {
