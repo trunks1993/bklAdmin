@@ -75,7 +75,7 @@
           </div>
         </div>
         <div class="imgPanelBox-step2" v-if="step === 2">
-          <croppa placeholder="选择图片" :placeholder-font-size="25" :show-remove-button="false" :disable-click-to-choose="true" :initial-image="selectedAdvertPhoto" canvas-color="transparent" v-model="croppa" ref="myCroppa">
+          <croppa placeholder="选择图片" :placeholder-font-size="25" :show-remove-button="false" :disable-click-to-choose="true" :initial-image="selectedAdvertPhoto" canvas-color="transparent" v-model="croppa">
           </croppa>
         </div>
       </div>
@@ -95,6 +95,7 @@ import Ticket from '@/components/Ueditor/plugin/ticket'
 import { getObjectPosition, getElement } from '@/components/Ueditor/domUtils'
 import { mapGetters } from 'vuex'
 import { getAdvertList, saveAdvert, deleteAdvert } from '@/api/advert'
+import { uploadImg } from '@/api/user'
 
 export default {
   components: {
@@ -253,8 +254,14 @@ export default {
     },
     sureSelectedAdvertPhoto() {
       this.dialogAdvertPic = false
-      let url = this.croppa.generateDataUrl()
-      this.advert.advertPic = url
+      this.croppa.generateBlob((blob) => {
+        var formData = new FormData()
+        formData.append('file', blob)
+        formData.append('userId', this.$store.getters.userInfo.id)
+        uploadImg(formData).then(res => {
+          this.advert.advertPic = res
+        })
+      })
     },
     handleCurrentChange() {
       this.getList()
@@ -547,4 +554,3 @@ export default {
 }
 
 </style>
-

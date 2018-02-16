@@ -17,7 +17,7 @@
             </span>
           </div>
           <div v-else class="advertList-nothing">
-            <el-button type="text" @click="toAdvert">啥也没有，立即创建软文</el-button>
+            <el-button type="text" @click="toAdvert">啥也没有，立即创建图文</el-button>
           </div>
         </el-tab-pane>
         <el-tab-pane label="外链" v-loading="advertLoading">
@@ -142,7 +142,9 @@ export default {
       this.dialogAdvertSelect = true
     },
     toAdvert() {
-      this.$router.push({ path: '/activity/advert' })
+      // this.$router.push({ path: '/advert/index' })
+      window.open("#/advert/index")
+
     },
     handleTabClick(val) {
       this.newLink = false

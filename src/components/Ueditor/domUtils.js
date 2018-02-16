@@ -223,7 +223,7 @@ export function createInput(editor, _this) {
 
   document.onscroll = function() {
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0
-    if (_this.$route.path === '/activity/advert') {
+    if (_this.$route.path === '/advert/index') {
       if (scrollTop > 91) {
         UE.dom.domUtils.addClass(editor.container.children[0], 'fixedToolBar')
         getElement('editor-fixedTemp').setAttribute('style', 'height: 117px')

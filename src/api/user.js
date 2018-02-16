@@ -235,3 +235,12 @@ export function iknown(userId) {
     params: { userId: userId }
   })
 }
+
+// 标记为已读
+export function uploadImg(formData) {
+  return request({
+    url: '/upload/uploadFormData',
+    method: 'post',
+    data: formData
+  })
+}

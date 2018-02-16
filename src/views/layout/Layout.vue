@@ -24,7 +24,7 @@ export default {
     this.connectSrv()
     const _this = this
     window.onscroll = function() {
-      if (_this.$route.path !== '/activity/advert') {
+      if (_this.$route.path !== '/advert/index') {
         const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0
         if (scrollTop > 61) {
           UE.dom.domUtils.addClass(getElement('navbar'), 'fixedNav')
