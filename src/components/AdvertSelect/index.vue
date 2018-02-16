@@ -4,7 +4,7 @@
       <div v-if="!advertRes" class="advert-plus" @click="openSelectDialog">
         <i class="el-icon-document"></i>
       </div>
-      <div v-else class="advert-res" :style="{'background-image':'url(\''+advertRes.advertPic+'\')'}" @click="openSelectDialog(advertRes)">
+      <div v-else class="advert-res" :style="{'background-image':'url(\''+baseUrl+advertRes.advertPic+'\')'}" @click="openSelectDialog(advertRes)">
         <span class="advert-res-title">{{advertRes.title}}</span>
       </div>
     </div>
@@ -12,7 +12,7 @@
       <el-tabs tab-position="top" @tab-click="handleTabClick" v-model="activeName">
         <el-tab-pane label="微页面" v-loading="advertLoading">
           <div v-if="advertList.length>0" class="advertList-content">
-            <span v-for="item in advertList" @click="selectAdvert(item)" :class="{active:advertSelect.id === item.id}" class="advertList-content-item" :style="{'background-image':'url(\''+item.advertPic+'\')'}">
+            <span v-for="item in advertList" @click="selectAdvert(item)" :class="{active:advertSelect.id === item.id}" class="advertList-content-item" :style="{'background-image':'url(\''+baseUrl+item.advertPic+'\')'}">
                 <span class="advertList-content-title">{{item.title}}</span>
             </span>
           </div>
@@ -22,7 +22,7 @@
         </el-tab-pane>
         <el-tab-pane label="外链" v-loading="advertLoading">
           <div v-if="advertList.length>0 && !newLink" class="advertList-content">
-            <span v-for="item in advertList" @click="selectAdvert(item)" :class="{active:advertSelect.id === item.id}" class="advertList-content-item" :style="{'background-image':'url(\''+item.advertPic+'\')'}">
+            <span v-for="item in advertList" @click="selectAdvert(item)" :class="{active:advertSelect.id === item.id}" class="advertList-content-item" :style="{'background-image':'url(\''+baseUrl+item.advertPic+'\')'}">
               <span class="advertList-content-title">{{item.title}}</span>
             </span>
             <span class="advertList-content-add" @click="()=>{this.newLink = true}"><i class="el-icon-plus"></i></span>
@@ -31,7 +31,7 @@
             <el-form :model="advert" :rules="rules" ref="advert" size="small" style="width: 100%;" label-width="150px" label-position="right">
               <el-form-item label="广告图片:">
                 <croppa placeholder="选择图片" :placeholder-font-size="25" canvas-color="transparent" v-model="croppa" ref="myCroppa">
-          </croppa>
+                </croppa>
               </el-form-item>
               <el-form-item label="广告标题:" prop="title">
                 <el-input type="textarea" style="width:220px" placeholder="不超过64个字符" v-model="advert.title"></el-input>
@@ -57,6 +57,7 @@
 <script>
 import { getAdvertList, saveAdvert, deleteAdvert, getAdvert } from '@/api/advert'
 import { validateAdLink } from '@/utils/validate'
+import { uploadImg } from '@/api/user'
 
 export default {
   props: {
@@ -115,6 +116,7 @@ export default {
       getAdvert(this.value).then(res => {
         const data = res.data
         if (data.code === 0 && data.msg === 'success') {
+          console.log(data)
           this.advertSelect = data.data
           this.advertRes = data.data
           this.advertLoading = false
@@ -158,22 +160,30 @@ export default {
     saveAdvert() {
       this.$refs["advert"].validate((valid) => {
         if (valid) {
-          const url = this.croppa.generateDataUrl()
-          this.advert.advertPic = url || ''
-          saveAdvert(this.advert).then(res => {
-            const data = res.data
-            if (data.code === 0 && data.msg === 'success') {
-              this.$notify({ title: '成功', message: '保存成功', type: 'success' })
-              this.newLink = false
-              this.croppa = {}
-              this.getAdvertList()
-              this.$refs["advert"].resetFields()
-            } else {
-              this.$message.error('保存失败')
-            }
-          }).catch(error => {
-            this.$message.error('保存失败')
-          })
+          this.croppa.generateBlob((blob) => {
+            const formData = new FormData()
+            formData.append('file', blob)
+            formData.append('userId', this.$store.getters.userInfo.id)
+            uploadImg(formData).then(res => {
+              this.advert.advertPic = res.data.data
+              saveAdvert(this.advert).then(res => {
+                const data = res.data
+                if (data.code === 0 && data.msg === 'success') {
+                  this.$notify({ title: '成功', message: '保存成功', type: 'success' })
+                  this.newLink = false
+                  this.croppa = {}
+                  this.getAdvertList()
+                  this.$refs["advert"].resetFields()
+                } else {
+                  this.$message.error('保存失败')
+                }
+              }).catch(error => {
+                this.$message.error('保存失败')
+              })
+            }).catch(error => {
+              this.$message.error('图片上传失败')
+            })
+          }, 'image/jpeg', 0.8)
         }
       })
     },
@@ -403,7 +413,8 @@ export default {
 
 </style>
 <style>
-  /*.dialogAdvertSelect .el-dialog__body {
+/*.dialogAdvertSelect .el-dialog__body {
     padding: 0;
   }*/
+
 </style>

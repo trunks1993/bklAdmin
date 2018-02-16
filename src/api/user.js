@@ -239,7 +239,7 @@ export function iknown(userId) {
 // 标记为已读
 export function uploadImg(formData) {
   return request({
-    url: '/upload/uploadFormData',
+    url: '/upload/uploadBlobImg',
     method: 'post',
     data: formData
   })

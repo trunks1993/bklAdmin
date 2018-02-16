@@ -8,7 +8,7 @@
         </div>
         <div class="articles-items" v-loading="articleLoading">
           <div class="articles-items-box" v-for="(item,index) in advertList" @click="selectAdvert(item,index)" :class="{'articles-items-box-active':item.id === advert.id}">
-            <div class="articles-items-box-img" :style="{'background-image':'url(\''+item.advertPic+'\')'}">
+            <div class="articles-items-box-img" :style="{'background-image':'url(\''+baseUrl+item.advertPic+'\')'}">
               <div v-if="!item.advertPic" class="isNone"><i class="el-icon-picture"></i></div>
               <div class="articles-items-box-img-title">{{item.title || '标题'}}</div>
             </div>
@@ -36,7 +36,7 @@
           <el-button :style="{'border-radius':0}" @click="getContentImg" type="info" plain size="small">从正文中选择</el-button>
           <el-button :style="{'border-radius':0}" type="info" plain size="small">从图片库选择</el-button>
         </div>
-        <img v-if='!!advert.advertPic' style="width: 100px;height: 100px;margin-top: 10px;" :src="advert.advertPic">
+        <img v-if='!!advert.advertPic' style="width: 100px;height: 100px;margin-top: 10px;" :src="baseUrl+advert.advertPic">
       </div>
     </div>
     <div class="advert-container-toolsBox" id="advert-container-toolsBox">
@@ -255,13 +255,13 @@ export default {
     sureSelectedAdvertPhoto() {
       this.dialogAdvertPic = false
       this.croppa.generateBlob((blob) => {
-        var formData = new FormData()
+        const formData = new FormData()
         formData.append('file', blob)
         formData.append('userId', this.$store.getters.userInfo.id)
         uploadImg(formData).then(res => {
-          this.advert.advertPic = res
+          this.advert.advertPic = res.data.data
         })
-      })
+      }, 'image/jpeg', 0.8)
     },
     handleCurrentChange() {
       this.getList()
@@ -284,7 +284,6 @@ export default {
       })
     },
     addTicket() {
-      // this.editor.execCommand('inserthtml', `<section style="text-align: center;max-height:200px;background: red; width: 90%" contenteditable='false'>测试测试</section>`)
       this.$message({ type: 'warning', message: '暂未上线' })
     },
     getContentImg() {
