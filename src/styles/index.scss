@@ -154,3 +154,16 @@ a:hover {
     top: 13px !important;
   }
 }
+
+//图片裁切
+.croppa-container {
+  canvas {
+    border: 2px dashed;
+    cursor: pointer;
+  }
+}
+.croppa--has-target {
+  canvas {
+    cursor: move;
+  }
+}

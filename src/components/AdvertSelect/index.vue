@@ -4,15 +4,15 @@
       <div v-if="!advertRes" class="advert-plus" @click="openSelectDialog">
         <i class="el-icon-document"></i>
       </div>
-      <div v-else class="advert-res" :style="{'background-image':'url(\''+baseUrl+advertRes.advertPic+'\')'}" @click="openSelectDialog(advertRes)">
+      <div v-else class="advert-res" :style="{'background-image':'url(\''+advertRes.advertPic+'\')'}" @click="openSelectDialog(advertRes)">
         <span class="advert-res-title">{{advertRes.title}}</span>
       </div>
     </div>
-    <el-dialog title="广告设置" :visible.sync="dialogAdvertSelect" v-if="dialogAdvertSelect" @close="handleDialogClose">
-      <el-tabs tab-position="left" style="height: 300px;" @tab-click="handleTabClick" v-model="activeName">
+    <el-dialog title="广告设置" class="dialogAdvertSelect" :visible.sync="dialogAdvertSelect" v-if="dialogAdvertSelect" @close="handleDialogClose">
+      <el-tabs tab-position="top" @tab-click="handleTabClick" v-model="activeName">
         <el-tab-pane label="微页面" v-loading="advertLoading">
           <div v-if="advertList.length>0" class="advertList-content">
-            <span v-for="item in advertList" @click="selectAdvert(item)" :class="{active:advertSelect.id === item.id}" class="advertList-content-item" :style="{'background-image':'url(\''+baseUrl+item.advertPic+'\')'}">
+            <span v-for="item in advertList" @click="selectAdvert(item)" :class="{active:advertSelect.id === item.id}" class="advertList-content-item" :style="{'background-image':'url(\''+item.advertPic+'\')'}">
                 <span class="advertList-content-title">{{item.title}}</span>
             </span>
           </div>
@@ -22,18 +22,16 @@
         </el-tab-pane>
         <el-tab-pane label="外链" v-loading="advertLoading">
           <div v-if="advertList.length>0 && !newLink" class="advertList-content">
-            <span v-for="item in advertList" @click="selectAdvert(item)" :class="{active:advertSelect.id === item.id}" class="advertList-content-item" :style="{'background-image':'url(\''+baseUrl+item.advertPic+'\')'}">
+            <span v-for="item in advertList" @click="selectAdvert(item)" :class="{active:advertSelect.id === item.id}" class="advertList-content-item" :style="{'background-image':'url(\''+item.advertPic+'\')'}">
               <span class="advertList-content-title">{{item.title}}</span>
             </span>
-            <span class="advertList-content-add" @click="()=>{this.newLink = true}"><i class="el-icon-share"></i></span>
+            <span class="advertList-content-add" @click="()=>{this.newLink = true}"><i class="el-icon-plus"></i></span>
           </div>
           <div v-else class="advertList-addLink">
             <el-form :model="advert" :rules="rules" ref="advert" size="small" style="width: 100%;" label-width="150px" label-position="right">
               <el-form-item label="广告图片:">
-                <el-upload class="avatar-uploader" :action="uploadUrl" :show-file-list="false" :on-success="handleAvatarSuccess" :before-upload="beforeAvatarUpload">
-                  <img v-if="advert.advertPic" :src="previewImg" class="avatar">
-                  <i v-else class="el-icon-plus avatar-uploader-icon"></i>
-                </el-upload>
+                <croppa placeholder="选择图片" :placeholder-font-size="25" canvas-color="transparent" v-model="croppa" ref="myCroppa">
+          </croppa>
               </el-form-item>
               <el-form-item label="广告标题:" prop="title">
                 <el-input type="textarea" style="width:220px" placeholder="不超过64个字符" v-model="advert.title"></el-input>
@@ -73,7 +71,7 @@ export default {
       advertLoading: false,
       paneTab: 0,
       newLink: false,
-
+      croppa: {},
       advertList: [],
       total: null,
       listQuery: {
@@ -155,32 +153,17 @@ export default {
       }
       this.getAdvertList()
     },
-    //--------------------------------------图片上传--------------------------------------
-    handleAvatarSuccess(res, file) {
-      this.previewImg = URL.createObjectURL(file.raw)
-      this.advert.advertPic = res.data
-    },
-    beforeAvatarUpload(file) {
-      const isJPG = file.type === 'image/jpeg' || file.type === 'image/png';
-      const isLt2M = file.size / 1024 / 1024 < 2;
-
-      if (!isJPG) {
-        this.$message.error('上传头像图片只能是 JPG 或 PNG 格式!');
-      }
-      if (!isLt2M) {
-        this.$message.error('上传头像图片大小不能超过 2MB!');
-      }
-      return isJPG && isLt2M;
-    },
-    // ---------------------------------------------------------------------------------
     saveAdvert() {
       this.$refs["advert"].validate((valid) => {
         if (valid) {
+          const url = this.croppa.generateDataUrl()
+          this.advert.advertPic = url || ''
           saveAdvert(this.advert).then(res => {
             const data = res.data
             if (data.code === 0 && data.msg === 'success') {
               this.$notify({ title: '成功', message: '保存成功', type: 'success' })
               this.newLink = false
+              this.croppa = {}
               this.getAdvertList()
               this.$refs["advert"].resetFields()
             } else {
@@ -416,4 +399,9 @@ export default {
   }
 }
 
+</style>
+<style>
+  /*.dialogAdvertSelect .el-dialog__body {
+    padding: 0;
+  }*/
 </style>

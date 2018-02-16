@@ -56,12 +56,12 @@
       </el-table-column>
       <el-table-column align="center" label="微信头像">
         <template slot-scope="scope">
-          <img v-if="!!scope.row.vo.customerPhoto" :src="scope.row.vo.customerPhoto" style="width:50px;height:50px;">
+          <img v-if="scope.row.vo&&scope.row.vo.customerPhoto" :src="scope.row.vo.customerPhoto" style="width:50px;height:50px;">
         </template>
       </el-table-column>
       <el-table-column align="center" label="微信昵称">
         <template slot-scope="scope">
-          <span>{{scope.row.vo.customerName}}</span>
+          <span>{{scope.row.vo&&scope.row.vo.customerName}}</span>
         </template>
       </el-table-column>
       <el-table-column align="center" label="返回的msg">

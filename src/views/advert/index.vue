@@ -253,11 +253,8 @@ export default {
     },
     sureSelectedAdvertPhoto() {
       this.dialogAdvertPic = false
-      // this.advert.advertPic = this.selectedAdvertPhoto.split(this.baseUrl)[1]
-      // let url = this.croppa.generateDataUrl()
       let url = this.croppa.generateDataUrl()
       this.advert.advertPic = url
-
     },
     handleCurrentChange() {
       this.getList()
@@ -550,11 +547,4 @@ export default {
 }
 
 </style>
-<style lang="scss">
-.croppa-container {
-  canvas {
-    border: 2px dashed;
-  }
-}
 
-</style>

@@ -49,7 +49,7 @@
           <el-form-item label="二维码数(红包数)：">
             <el-col :span="9">
               <el-input-number :min="1" v-model="activity.qrCount" 
-              @blur="()=>{this.$refs.activity.validateField('minMoney')
+              @blur="()=>{if(this.activity.qrCount!==1)this.$refs.activity.validateField('minMoney')
             this.$refs.activity.validateField('totalMoney')}" 
             @change="checkInteger($event,'qrCount')" :controls="false">
               </el-input-number>
@@ -63,7 +63,7 @@
             </el-col>
             <el-col :span="15">微信限制，单个红包金额不能少于1元</el-col>
           </el-form-item>
-          <el-form-item label="最小金额：" prop="minMoney" v-if="activity.qrCount !== 1">
+          <el-form-item label="最小金额：" prop="minMoney" v-show="activity.qrCount !== 1">
             <el-col :span="9">
               <el-input-number :min="1" :max="maxMinMoney" :controls="false" v-model="activity.minMoney" class="gold" @change="checkSmallNumber($event,'minMoney')"></el-input-number>
               <span style="color:#4fc08d;font-size:13px;">{{ minMoney_rule(activity.totalMoney,activity.qrCount ) }}</span>
@@ -98,7 +98,7 @@ export default {
   },
   data() {
     const validateTotalMoney = (rule, value, callback) => {
-      this.$refs.activity.validateField('minMoney')
+      if (this.activity.qrCount !== 1) this.$refs.activity.validateField('minMoney')
       if (value < this.activity.qrCount) {
         callback(new Error('总金额不能小于红包个数'));
       }
@@ -146,23 +146,6 @@ export default {
     this.getDeliveryAddressList()
   },
   methods: {
-    //--------------------------------------图片上传--------------------------------------
-    handleAvatarSuccess(res, file, fileList) {
-      // this.previewImg = URL.createObjectURL(file.raw)
-      this.activity.adImg = process.env.BASE_API + res.data
-    },
-    beforeAvatarUpload(file) {
-      const isJPG = file.type === 'image/jpeg' || file.type === 'image/png';
-      const isLt2M = file.size / 1024 / 1024 < 2;
-
-      if (!isJPG) {
-        this.$message.error('上传头像图片只能是 JPG 或 PNG 格式!');
-      }
-      if (!isLt2M) {
-        this.$message.error('上传头像图片大小不能超过 2MB!');
-      }
-      return isJPG && isLt2M;
-    },
     // -------------------------------------收货地址-------------------------------------
     getDeliveryAddressList(isChange) {
       getDeliveryAddressList(this.listQuery).then(response => {
@@ -209,7 +192,7 @@ export default {
     },
     // ----------------父组件提交验证--------------------
     validateActivity() {
-      this.$refs["activity"].validate((valid) => {
+      this.$refs.activity.validate((valid) => {
         if (valid) {
           this.$emit('getChildValidMsg', true)
         } else {

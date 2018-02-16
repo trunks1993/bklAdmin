@@ -31,23 +31,6 @@ export const constantRouterMap = [
       path: 'dashboard',
       component: _import('dashboard/index')
     }]
-  },
-  // {
-  //   path: '/createActivity',
-  //   redirect: '/create',
-  // },
-  // {
-  //   path: '/create',
-  //   component: _import('activity/create')
-  // },
-  {
-    path: '/pay',
-    redirect: '/test'
-  },
-  {
-    path: '/test',
-    component: _import('common/pay')
-
   }
 ]
 
