@@ -31,11 +31,11 @@ export default {
     }
   },
   mounted() {
-    this.$nextTick(function f1() {
+    this.$nextTick(() => {
       // 保证 this.$el 已经插入文档
       this.$refs.editor.id = this.id;
       this.editor = UE.getEditor(this.id, config)
-      this.editor.ready(function f2() {
+      this.editor.ready(function() {
         createInput(this.editor, this) //初始化加载input
         this.editor.addListener("contentChange", function() {
           const content = this.editor.getContent()

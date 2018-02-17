@@ -88,7 +88,7 @@ export default {
     &-msg {
       font-size: 30px;
       position: relative;
-      margin-right: 10px;
+      margin-right: 20px;
       display: flex;
       align-items: center;
       &:hover {
@@ -96,6 +96,7 @@ export default {
       }
     }
     &-userTools {
+      height: 100%;
       display: flex;
       align-items: center;
       &:hover .dropdown {
